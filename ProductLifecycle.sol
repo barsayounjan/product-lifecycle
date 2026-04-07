@@ -3,33 +3,60 @@ pragma solidity ^0.8.0;
 
 contract ProductLifecycle {
 
-    enum Stage { Design, Manufacturing, Sold }
+// Product stages
+enum Stage { Design, Manufacturing, Sold }
 
-    Stage public currentStage;
+// Product structure
+struct Product {
+uint id;
+Stage stage;
+address owner; // current owner
+address buyer; // who bought it
+}
 
-    address public owner;
+// Store all products
+mapping(uint => Product) public products;
 
-    constructor() {
-        currentStage = Stage.Design;
-        owner = msg.sender;
-    }
+// Total products created
+uint public productCount;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not authorized");
-        _;
-    }
+// Total products sold
+uint public soldCount;
 
-    function Manufacturing() public onlyOwner {
-        require(currentStage == Stage.Design, "Must be in Design stage");
-        currentStage = Stage.Manufacturing;
-    }
+// Create a new product
+function createProduct() public {
+productCount++;
+products[productCount] = Product(
+productCount,
+Stage.Design,
+msg.sender,
+address(0)
+);
+}
 
-    function Sold() public onlyOwner {
-        require(currentStage == Stage.Manufacturing, "Must be in Manufacturing stage");
-        currentStage = Stage.Sold;
-    }
+// Move to Manufacturing stage
+function startManufacturing(uint _id) public {
+require(products[_id].stage == Stage.Design, "Must be in Design stage");
 
-    function getStage() public view returns (Stage) {
-        return currentStage;
-    }
+products[_id].stage = Stage.Manufacturing;
+}
+
+// Sell product to a buyer
+function sellProduct(uint _id, address _buyer) public {
+require(products[_id].stage == Stage.Manufacturing, "Must be in Manufacturing stage");
+
+products[_id].stage = Stage.Sold;
+products[_id].buyer = _buyer;
+products[_id].owner = _buyer;
+
+soldCount++; // increase sold count
+}
+
+// Get product details
+function getProduct(uint _id) public view returns (
+uint, Stage, address, address
+) {
+Product memory p = products[_id];
+return (p.id, p.stage, p.owner, p.buyer);
+}
 }
